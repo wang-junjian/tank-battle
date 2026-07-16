@@ -337,6 +337,24 @@ body {
 .btn-ghost { background: transparent; color: var(--muted); }
 .btn-ghost:hover { color: var(--text); }
 
+.level-select { margin: 18px 0 8px; }
+.level-select-label {
+  font-size: 11px; letter-spacing: .18em; color: var(--muted-2);
+  margin-bottom: 10px; display: block;
+}
+.level-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.level-grid .btn {
+  padding: 10px 6px; font-size: 13px; font-family: var(--mono);
+  letter-spacing: .04em;
+}
+.level-grid .btn.locked {
+  opacity: .45; cursor: not-allowed; border-color: var(--line); color: var(--muted-2);
+}
+.level-grid .btn.locked:hover { border-color: var(--line); color: var(--muted-2); }
+.level-grid .btn.active { border-color: var(--accent); color: var(--accent); }
+
 .result { margin: 6px 0 22px; }
 .result-row {
   display: flex; justify-content: space-between;
@@ -540,6 +558,10 @@ kbd {
           <button class="btn btn-primary" id="btn-start">开始游戏</button>
           <button class="btn" id="btn-menu-help">操作说明</button>
           <button class="btn" id="btn-menu-settings">设置</button>
+        </div>
+        <div class="level-select">
+          <span class="level-select-label">关卡选择 STAGE SELECT</span>
+          <div class="level-grid" id="level-grid"></div>
         </div>
         <p class="menu-foot">方向键移动 · 空格 / J 射击 · P / Esc 暂停</p>
       </div>
@@ -1507,6 +1529,7 @@ TB.Game = class {
   }
   _loadStorage() {
     this.highScore = this._storageGet('tankbattle.highscore', 0) || 0;
+    this.unlockedLevel = this._storageGet('tankbattle.unlockedLevel', 1) || 1;
     const cfg = this._storageGet('tankbattle.config', null);
     if (cfg) {
       this.config = Object.assign(this.config, cfg);
@@ -1527,6 +1550,11 @@ TB.Game = class {
       return true;
     }
     return false;
+  }
+  saveUnlockedLevel(level) {
+    const target = Math.max(this.unlockedLevel || 1, level + 1);
+    this.unlockedLevel = target;
+    this._storageSet('tankbattle.unlockedLevel', target);
   }
 
   /* ---------------- 画布 ---------------- */
@@ -1574,15 +1602,16 @@ TB.Game = class {
     this.player.invincibleUntil = this.now + (idle ? 0 : this.C.PLAYER.respawnInvincible);
   }
 
-  startGame() {
+  startGame(startLevel = 0) {
     if (this.state === 'playing') return;
+    startLevel = Math.max(0, Math.min(startLevel, TB.LEVELS.length - 1));
     this.score = 0;
     this.lives = this.C.PLAYER.lives;
     this.comboCount = 0;
     this._levelTransition = false;
     this._pendingNextLevel = null;
     if (this.player) this.player.powerLevel = 0;
-    this.prepareLevel(0);
+    this.prepareLevel(startLevel);
     this.state = 'playing';
     this.audio.unlock();
     this._emit({ type: 'banner', text: this.level.name });
@@ -1923,6 +1952,7 @@ TB.Game = class {
   /* ---------------- 流转 ---------------- */
   _levelClear() {
     this.audio.play('levelup');
+    this.saveUnlockedLevel(this.levelIndex);
     if (this.levelIndex + 1 < TB.LEVELS.length) {
       this.state = 'paused';
       this._levelTransition = true; // 区别于用户暂停
@@ -2227,7 +2257,7 @@ TB.Game = class {
       case 'hud': updateHud(evt); break;
       case 'banner': showBanner(evt.text); break;
       case 'state':
-        if (evt.state === 'menu') showModal('menu');
+        if (evt.state === 'menu') { renderLevelSelect(); showModal('menu'); }
         else if (evt.state === 'playing') hideAllModals();
         else if (evt.state === 'paused' && !inTransition) showModal('pause');
         else if (evt.state === 'over') showGameOver(evt);
@@ -2258,6 +2288,23 @@ TB.Game = class {
     showModal('gameover');
   }
 
+  /* ---------------- 关卡选择 ---------------- */
+  function renderLevelSelect() {
+    const wrap = $('level-grid');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    const unlocked = Math.max(1, game.unlockedLevel || 1);
+    TB.LEVELS.forEach((lvl, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (idx < unlocked ? '' : ' locked');
+      btn.textContent = pad(idx + 1, 2);
+      if (idx < unlocked) {
+        btn.onclick = () => game.startGame(idx);
+      }
+      wrap.appendChild(btn);
+    });
+  }
+
   /* ---------------- 动作（键盘） ---------------- */
   input.onAction = (action) => {
     if (action === 'pause') {
@@ -2271,7 +2318,7 @@ TB.Game = class {
   };
 
   /* ---------------- 按钮 ---------------- */
-  $('btn-start').onclick = () => game.startGame();
+  $('btn-start').onclick = () => game.startGame(Math.max(0, (game.unlockedLevel || 1) - 1));
   $('btn-menu-help').onclick = () => showModal('help');
   $('btn-menu-settings').onclick = () => { syncSettingsUI(); showModal('settings'); };
   $('btn-help').onclick = () => showModal('help');
@@ -2383,6 +2430,7 @@ TB.Game = class {
 
   // 初始化 UI
   syncSettingsUI();
+  renderLevelSelect();
 })();
   </script>
 </body>
