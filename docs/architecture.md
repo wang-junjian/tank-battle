@@ -29,11 +29,11 @@ graph TD
   INP -->|dir / fire / action| GAME
   GAME -->|读取静态数据| CFG
   GAME -->|创建与驱动| ENT
-  GAME -->|play(name)| AUD
+  GAME -->|play（name）| AUD
   GAME -->|world 上下文| ENT
   GAME -->|save/load| STORE
   MAIN -->|写入配置| STORE
-  GAME -->|render(ctx)| HTML
+  GAME -->|render（ctx）| HTML
   MAIN -->|HUD / 弹窗| HTML
 ```
 
