@@ -2,6 +2,10 @@
 
 一款基于 HTML5 Canvas 的「坦克大战（Battle City 复刻）」前端游戏。纯原生实现，无构建步骤、无外部依赖、无占位资源，浏览器即开即玩。
 
+> **在线试玩 / Play online**：<https://wangjunjian.com/tank-battle/> — 打开即玩、零安装；移动端自动显示虚拟方向键与射击键。站上同时提供 `tank-battle.html` 供下载后离线双击打开。
+>
+> **备用地址 / Fallback**：<https://wang-junjian.github.io/tank-battle/>（GitHub Pages 官方入口；自定义域变更时仍可访问，两个入口返回同一份产物）。
+
 ![坦克大战海报](asserts/images/poster.png)
 
 ---
@@ -18,6 +22,10 @@
 ---
 
 ## 快速开始
+
+### 在线游玩
+
+直接打开 <https://wangjunjian.com/tank-battle/>，浏览器即开即玩，无需下载。
 
 ### 直接运行
 
@@ -50,6 +58,7 @@ node --test tests/
 
 ```
 ├── index.html          # 页面骨架、Canvas、HUD、弹窗、触屏控件
+├── tank-battle.html    # 单文件可玩产物：CSS/JS 全内联，Pages 上发布为 index.html
 ├── css/styles.css      # “战术街机”视觉：深墨背景、CRT 边框、响应式布局
 ├── js/
 │   ├── config.js       # 全局配置：地图、敌人、道具、火力、按键、关卡数据
@@ -119,6 +128,16 @@ node --test tests/
 - **全局命名空间**：所有模块挂载在 `window.TB` 下，便于调试与测试。
 
 更详细的架构说明请查看 [`docs/architecture.md`](./docs/architecture.md)。
+
+---
+
+## 部署
+
+线上站点由 `.github/workflows/pages.yml` 发布：push 到 `main`（或在 Actions 里手动 `workflow_dispatch`）即触发 `npm test` → 校验 `tank-battle.html` 确实自包含 → 原样上传为 Pages 的 `index.html`，随后由官方 `actions/deploy-pages` 上线。
+
+- 发布的就是仓库里的 `tank-battle.html` 本身，不经过任何构建，**没有「源码与产物不一致」的可能**；同目录另有 `tank-battle.html` 供下载。
+- CI 会拦截「单文件里又出现了外链样式/脚本/图片」——那种改动在单文件发布形态下必然 404。
+- 自定义域来自用户站点仓库 `wang-junjian/wang-junjian.github.io` 已绑定的 `wangjunjian.com`：本仓库启用 Pages 后，项目站点自动挂到该域的 `/tank-battle/` 路径下。**本仓库不配置 CNAME、不改动域名或 DNS。**
 
 ---
 
